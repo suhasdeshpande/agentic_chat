@@ -83,6 +83,74 @@ class CopilotKitFlow(Flow[CopilotKitState]):
                 except Exception as e:
                     pass
 
+    def get_message_history(self, system_prompt=None, max_messages=10):
+        """
+        Get message history from either state or input, with fallback to system prompt
+        
+        Args:
+            system_prompt: Optional system prompt to use if no messages exist
+            max_messages: Maximum number of messages to include in history
+            
+        Returns:
+            List of message dictionaries
+        """
+        # Initialize with system prompt if provided
+        messages = []
+        if system_prompt:
+            messages = [{"role": "system", "content": system_prompt}]
+            
+        # Check state first (local development)
+        if hasattr(self.state, "messages") and self.state.messages:
+            # If we have a system prompt and state already has messages with a system prompt,
+            # use the state's system prompt instead
+            if messages and self.state.messages and self.state.messages[0].get("role") == "system":
+                messages = self.state.messages
+            else:
+                # Otherwise append state messages to our messages
+                messages.extend(self.state.messages)
+        
+        # Check input (Enterprise deployment)
+        elif hasattr(self, "input") and "messages" in self.input:
+            # Filter to just user/assistant/system messages
+            history = [msg for msg in self.input["messages"] 
+                     if msg.get("role") in ["user", "assistant", "system"]]
+            
+            # If we already have a system message and history has one too, 
+            # use the one from history
+            if messages and history and history[0].get("role") == "system":
+                messages = history
+            else:
+                # Otherwise append history to our messages
+                messages.extend(history)
+        
+        # Only keep the most recent history up to max_messages
+        if len(messages) > max_messages:
+            # Always keep system message if present
+            if messages[0].get("role") == "system":
+                messages = [messages[0]] + messages[-(max_messages-1):]
+            else:
+                messages = messages[-max_messages:]
+                
+        return messages
+
+    def get_available_tools(self):
+        """
+        Get available tools from either state or input
+        
+        Returns:
+            List of tool definitions
+        """
+        # Check state first (local development)
+        if hasattr(self.state, "copilotkit") and hasattr(self.state.copilotkit, "actions"):
+            return self.state.copilotkit.actions
+        
+        # Check input (Enterprise deployment)
+        elif hasattr(self, "input") and "tools" in self.input:
+            return self.input.get("tools", [])
+            
+        # Default to empty list
+        return []
+
     def format_tools_for_llm(self, tools: List[Dict[str, Any]]):
         """
         Format tools for the OpenAI API

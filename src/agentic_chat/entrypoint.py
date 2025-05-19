@@ -66,7 +66,7 @@ def kickoff():
                 {
                     "id": "ck-bde5d991-261a-46e9-a825-895adcc92103",
                     "role": "user",
-                    "content": "Can you write a book about artificial intelligence? Also, please change the background to a nice blue gradient."
+                    "content": "Change background to a nice blue gradient, and write a book about artificial intelligence."
                 }
             ]
         }
@@ -76,7 +76,7 @@ def kickoff():
         
         # Start the flow with the input
         agentic_chat_flow = AgenticChatFlow()
-        result = agentic_chat_flow.kickoff(kickoff_input)
+        agentic_chat_flow.kickoff(kickoff_input)
         
         # Print summary of tool calls
         print(agentic_chat_flow.get_tools_summary())

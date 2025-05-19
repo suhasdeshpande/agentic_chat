@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from crewai.flow import start
 from crewai import LLM
 import sys
+import json
 
 # Import from copilotkit_integration
 from agentic_chat.copilotkit_integration import (
@@ -13,11 +14,6 @@ from agentic_chat.copilotkit_integration import (
 # Load environment variables from .env file
 load_dotenv()
 
-# Re-export kickoff from entrypoint.py
-def kickoff():
-    """Shim function that re-exports kickoff from entrypoint.py to avoid import errors"""
-    from agentic_chat.entrypoint import kickoff as entrypoint_kickoff
-    return entrypoint_kickoff()
 
 class AgenticChatFlow(CopilotKitFlow):
     """
@@ -35,21 +31,13 @@ class AgenticChatFlow(CopilotKitFlow):
         # Initialize CrewAI LLM with streaming enabled
         llm = LLM(model="gpt-4o", stream=True)
         
-        # Prepare messages array
-        messages = [
-            {"role": "system", "content": system_prompt}
-        ]
+        # Get message history using the base class method
+        messages = self.get_message_history(system_prompt=system_prompt)
         
-        # Add existing messages from state if available
-        if hasattr(self.state, "messages") and self.state.messages:
-            messages.extend(self.state.messages)
+        # Get available tools using the base class method  
+        tools = self.get_available_tools()
         
-        # Get tools directly from state
-        tools = []
-        if hasattr(self.state, "copilotkit") and hasattr(self.state.copilotkit, "actions"):
-            tools = self.state.copilotkit.actions
-        
-        # Format tools for OpenAI API using the imported method
+        # Format tools for OpenAI API using the base class method
         formatted_tools, available_functions = self.format_tools_for_llm(tools)
         
         try:
@@ -63,7 +51,7 @@ class AgenticChatFlow(CopilotKitFlow):
                 available_functions=available_functions
             )
             
-            # Handle tool responses using the imported method
+            # Handle tool responses using the base class method
             response = self.handle_tool_responses(
                 llm=llm,
                 response=response,
@@ -83,6 +71,11 @@ class AgenticChatFlow(CopilotKitFlow):
         except Exception as e:
             return f"\n\nAn error occurred: {str(e)}\n\n"
 
+
+def kickoff():
+    """Shim function that re-exports kickoff from entrypoint.py to avoid import errors"""
+    from agentic_chat.entrypoint import kickoff as entrypoint_kickoff
+    return entrypoint_kickoff()
 
 if __name__ == "__main__":
     # Run kickoff for compatibility with crewai run
