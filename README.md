@@ -15,6 +15,7 @@ pip install uv
 Next, navigate to your project directory and install the dependencies:
 
 (Optional) Lock the dependencies and install them by using the CLI command:
+
 ```bash
 crewai install
 ```
@@ -54,3 +55,113 @@ For support, questions, or feedback regarding the {{crew_name}} Crew or crewAI.
 - [Chat with our docs](https://chatg.pt/DWjSBZn)
 
 Let's create wonders together with the power and simplicity of crewAI.
+
+# AgenticChat
+
+Integration between CopilotKit and CrewAI flows for seamless tool usage in chat interactions.
+
+## Features
+
+- Seamless integration of CopilotKit tools with CrewAI flows
+- Automatic tool detection and formatting for LLM consumption
+- Event-based handling of tool calls
+- Improved response handling for tool usage
+
+## Installation
+
+```bash
+pip install -e .
+```
+
+## Usage
+
+### Basic Example
+
+Create an instance of `AgenticChatFlow` and use it in your application:
+
+```python
+from agentic_chat import AgenticChatFlow, register_tool_call_listener
+
+# Define your tools
+tools = [
+    {
+        "name": "example-tool",
+        "description": "An example tool",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "param": {
+                    "type": "string",
+                    "description": "A parameter"
+                }
+            },
+            "required": ["param"]
+        }
+    }
+]
+
+# Create input structure
+kickoff_input = {
+    "tools": tools,
+    "messages": [
+        {
+            "role": "user",
+            "content": "Hello, can you help me?"
+        }
+    ]
+}
+
+# Register listener for tool calls
+register_tool_call_listener()
+
+# Create flow and run
+flow = AgenticChatFlow()
+result = flow.kickoff(kickoff_input)
+```
+
+### Using the CrewAI CLI
+
+You can run the example flows using the CrewAI CLI:
+
+```bash
+# Run the main example
+crewai run
+
+# Run alternative examples
+crewai run agentic_chat.examples:simple_example
+crewai run agentic_chat.examples:plot_example
+```
+
+## Development
+
+### Project Structure
+
+- `main.py`: Core `AgenticChatFlow` class implementation
+- `copilotkit_integration.py`: Underlying integration with CopilotKit
+- `entrypoint.py`: Main kickoff function for CLI and direct execution
+- `examples.py`: Additional example functions and test cases
+
+### Module Organization
+
+The package is designed to avoid circular imports while maintaining compatibility with various entry points:
+
+1. `copilotkit_integration.py` contains the base integration functionality
+2. `main.py` imports from integration and defines the main flow class
+3. `entrypoint.py` imports from main to provide the kickoff entry point
+4. `examples.py` contains additional examples that import from main
+
+### Running Tests
+
+Test the integration using the provided examples:
+
+```bash
+# Run directly
+python -m agentic_chat.examples
+
+# Run with CrewAI CLI
+crewai run
+```
+
+## License
+
+MIT
