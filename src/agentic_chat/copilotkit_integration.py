@@ -64,11 +64,22 @@ class CopilotKitFlow(Flow[CopilotKitState]):
         """
         # Use inputs parameter if provided, otherwise use state
         actual_input = inputs if inputs is not None else state
-
+ 
         print(f"Actual input: {actual_input}")
         print(f"Type of actual_input: {type(actual_input)}")
         print(f"State: {state}")
-
+        
+        # Debugging: Full input structure
+        if isinstance(actual_input, dict):
+            print(f"Input keys: {list(actual_input.keys())}")
+            if "messages" in actual_input:
+                print(f"Messages (first 3): {actual_input['messages'][:3]}")
+            if "tools" in actual_input:
+                print(f"Tools (count): {len(actual_input.get('tools', []))}")
+        
+        # Set the raw input for debugging
+        self._raw_input = actual_input
+  
         # Store tools at the class level for use in pre_chat
         if isinstance(actual_input, dict) and "tools" in actual_input:
             CopilotKitFlow._tools_from_input = actual_input.get("tools", [])
@@ -80,12 +91,24 @@ class CopilotKitFlow(Flow[CopilotKitState]):
         """
         Set tools on state just before chat runs
         """
+        print(f"pre_chat called, state: {hasattr(self, 'state')}")
+        print(f"Input available: {hasattr(self, 'input')}")
+        
         if hasattr(self, "state") and hasattr(self.state, "copilotkit") and hasattr(self.state.copilotkit, "actions"):
             if CopilotKitFlow._tools_from_input:
                 try:
                     self.state.copilotkit.actions = CopilotKitFlow._tools_from_input
                 except Exception as e:
+                    print(f"Error setting tools: {e}")
                     pass
+        
+        # Debug raw input
+        if hasattr(self, "_raw_input"):
+            print(f"Raw input in pre_chat: {type(self._raw_input)}")
+            
+            # Check for direct message access in raw input
+            if isinstance(self._raw_input, dict) and "messages" in self._raw_input:
+                print(f"Message count in raw input: {len(self._raw_input.get('messages', []))}")
 
     def get_message_history(self, system_prompt=None, max_messages=10):
         """
@@ -98,13 +121,25 @@ class CopilotKitFlow(Flow[CopilotKitState]):
         Returns:
             List of message dictionaries
         """
+        print(f"get_message_history called with system_prompt={system_prompt}")
+        print(f"state exists: {hasattr(self, 'state')}")
+        print(f"input exists: {hasattr(self, 'input')}")
+        
+        if hasattr(self, "_raw_input"):
+            print(f"Raw input type: {type(self._raw_input)}")
+            if isinstance(self._raw_input, dict):
+                print(f"Raw input keys: {list(self._raw_input.keys())}")
+                if "messages" in self._raw_input:
+                    print(f"Raw input messages (first 3): {self._raw_input['messages'][:3]}")
+        
         # Initialize with system prompt if provided
         messages = []
         if system_prompt:
             messages = [{"role": "system", "content": system_prompt}]
             
         # Check state first (local development)
-        if hasattr(self.state, "messages") and self.state.messages:
+        if hasattr(self, "state") and hasattr(self.state, "messages") and self.state.messages:
+            print("Found messages in state")
             # If we have a system prompt and state already has messages with a system prompt,
             # use the state's system prompt instead
             if messages and self.state.messages and self.state.messages[0].get("role") == "system":
@@ -115,11 +150,15 @@ class CopilotKitFlow(Flow[CopilotKitState]):
         
         # Check input (Enterprise deployment)
         elif hasattr(self, "input") and isinstance(self.input, dict):
+            print(f"Input keys: {list(self.input.keys())}")
             # Try to get messages directly from the input object
             if "messages" in self.input:
+                print(f"Found messages in input: {self.input['messages'][:3]}")
                 # Filter to just user/assistant/system messages
                 history = [msg for msg in self.input["messages"] 
                          if msg.get("role") in ["user", "assistant", "system"]]
+                
+                print(f"Filtered messages: {history[:3]}")
                 
                 # If we already have a system message and history has one too, 
                 # use the one from history
@@ -127,6 +166,19 @@ class CopilotKitFlow(Flow[CopilotKitState]):
                     messages = history
                 else:
                     # Otherwise append history to our messages
+                    messages.extend(history)
+            
+            # Try direct access from raw input if available
+            elif hasattr(self, "_raw_input") and isinstance(self._raw_input, dict) and "messages" in self._raw_input:
+                print("Accessing messages from raw input")
+                history = [msg for msg in self._raw_input["messages"] 
+                         if msg.get("role") in ["user", "assistant", "system"]]
+                
+                print(f"Raw input filtered messages: {history[:3]}")
+                
+                if messages and history and history[0].get("role") == "system":
+                    messages = history
+                else:
                     messages.extend(history)
             
             # Debug logging to understand what messages we found
@@ -140,7 +192,8 @@ class CopilotKitFlow(Flow[CopilotKitState]):
                 messages = [messages[0]] + messages[-(max_messages-1):]
             else:
                 messages = messages[-max_messages:]
-                
+        
+        print(f"Final messages: {messages}")      
         return messages
 
     def get_available_tools(self):
