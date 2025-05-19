@@ -64,7 +64,11 @@ class CopilotKitFlow(Flow[CopilotKitState]):
         """
         # Use inputs parameter if provided, otherwise use state
         actual_input = inputs if inputs is not None else state
-        
+
+        print(f"Actual input: {actual_input}")
+        print(f"Type of actual_input: {type(actual_input)}")
+        print(f"State: {state}")
+
         # Store tools at the class level for use in pre_chat
         if isinstance(actual_input, dict) and "tools" in actual_input:
             CopilotKitFlow._tools_from_input = actual_input.get("tools", [])
@@ -110,18 +114,24 @@ class CopilotKitFlow(Flow[CopilotKitState]):
                 messages.extend(self.state.messages)
         
         # Check input (Enterprise deployment)
-        elif hasattr(self, "input") and "messages" in self.input:
-            # Filter to just user/assistant/system messages
-            history = [msg for msg in self.input["messages"] 
-                     if msg.get("role") in ["user", "assistant", "system"]]
+        elif hasattr(self, "input") and isinstance(self.input, dict):
+            # Try to get messages directly from the input object
+            if "messages" in self.input:
+                # Filter to just user/assistant/system messages
+                history = [msg for msg in self.input["messages"] 
+                         if msg.get("role") in ["user", "assistant", "system"]]
+                
+                # If we already have a system message and history has one too, 
+                # use the one from history
+                if messages and history and history[0].get("role") == "system":
+                    messages = history
+                else:
+                    # Otherwise append history to our messages
+                    messages.extend(history)
             
-            # If we already have a system message and history has one too, 
-            # use the one from history
-            if messages and history and history[0].get("role") == "system":
-                messages = history
-            else:
-                # Otherwise append history to our messages
-                messages.extend(history)
+            # Debug logging to understand what messages we found
+            print(f"DEBUG: Input messages: {self.input.get('messages', [])}")
+            print(f"DEBUG: Processed messages: {messages}")
         
         # Only keep the most recent history up to max_messages
         if len(messages) > max_messages:
