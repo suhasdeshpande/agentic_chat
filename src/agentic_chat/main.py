@@ -22,6 +22,47 @@ class AgenticChatFlow(CopilotKitFlow):
     
     @start()
     def chat(self):
+        # Add super verbose logging at the start to capture exactly what we get
+        print("============ ENTERPRISE DEBUG START ============")
+        print(f"Flow ID: {getattr(self, 'id', 'unknown')}")
+        print(f"self dict keys: {list(vars(self).keys())}")
+        
+        # Log ALL attributes we can find
+        print(f"Input attribute exists: {hasattr(self, 'input')}")
+        print(f"State attribute exists: {hasattr(self, 'state')}")
+        print(f"Raw input attribute exists: {hasattr(self, '_raw_input')}")
+        
+        # Try to dump full raw objects
+        if hasattr(self, "input"):
+            try:
+                print(f"Input raw dump: {str(self.input)[:1000]}")
+            except:
+                print("Failed to dump input")
+        
+        if hasattr(self, "state"):
+            try:
+                print(f"State raw dump: {str(self.state)[:1000]}")
+            except:
+                print("Failed to dump state")
+                
+        # Try to access direct attributes possibly available on Enterprise
+        for possible_attr in ["threadId", "runId", "tools", "messages", "user_message", "input_message"]:
+            if hasattr(self, possible_attr):
+                print(f"Found attribute {possible_attr}: {getattr(self, possible_attr)}")
+            
+        # Try to access any messages directly
+        if hasattr(self, "input") and isinstance(self.input, dict) and "messages" in self.input:
+            print(f"Messages from input: {self.input['messages']}")
+            
+        # Full dump of all variables to see exactly what we're dealing with
+        print("--- VARS DUMP ---")
+        for k, v in vars(self).items():
+            try:
+                print(f"{k}: {str(v)[:300]}...")
+            except:
+                print(f"{k}: <failed to print>")
+        print("============ ENTERPRISE DEBUG END ============")
+        
         # Run pre_chat to ensure tools are set
         self.pre_chat()
         
