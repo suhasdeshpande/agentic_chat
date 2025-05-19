@@ -88,3 +88,6 @@ yarn-error.log*
 *.sqlite
 *.sqlite3
 *.db
+
+# Zip files
+*.zip
