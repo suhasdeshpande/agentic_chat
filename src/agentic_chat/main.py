@@ -6,6 +6,7 @@ from copilotkit.crewai import CopilotKitState
 from crewai.utilities.events import crewai_event_bus
 from typing import Dict, Any
 import datetime
+import sys
 
 # Load environment variables from .env file
 load_dotenv()
@@ -58,14 +59,28 @@ class EnhancedCopilotKitFlow(Flow[CopilotKitState]):
     # Store tools at the class level
     _tools_from_input = []
     
-    def kickoff(self, state):
+    def kickoff(self, state=None, inputs=None):
+        """
+        Start execution of the flow with the given input state
+        
+        Args:
+            state: The input state (legacy parameter name)
+            inputs: The input state (new parameter name)
+            
+        Returns:
+            The result of the flow execution
+        """
+        # Use inputs parameter if provided, otherwise use state
+        actual_input = inputs if inputs is not None else state
+        
         # Store tools at the class level for use in pre_chat
-        if isinstance(state, dict) and "tools" in state:
-            EnhancedCopilotKitFlow._tools_from_input = state.get("tools", [])
+        if isinstance(actual_input, dict) and "tools" in actual_input:
+            EnhancedCopilotKitFlow._tools_from_input = actual_input.get("tools", [])
             print(f"Stored {len(EnhancedCopilotKitFlow._tools_from_input)} tools at class level")
         
-        return super().kickoff(state)
-        
+        # Call parent's kickoff with the correct parameter
+        return super().kickoff(actual_input)
+
 
 class AgenticChatFlow(EnhancedCopilotKitFlow):
     """
@@ -266,7 +281,47 @@ def plot():
     agentic_chat_flow.plot()
 
 
+def test_inputs_parameter():
+    """Test function to verify the inputs parameter works correctly"""
+    print("\n--- Testing the inputs parameter for kickoff ---")
+    
+    # Create test input
+    test_input = {
+        "threadId": "test-thread-id",
+        "tools": [
+            {
+                "name": "test-tool",
+                "description": "A test tool for verifying inputs parameter",
+                "parameters": {
+                    "type": "object", 
+                    "properties": {},
+                    "required": []
+                }
+            }
+        ],
+        "messages": [
+            {
+                "role": "user",
+                "content": "This is a test message"
+            }
+        ]
+    }
+    
+    # Create flow
+    flow = AgenticChatFlow()
+    
+    # Call kickoff with inputs parameter (which should now work)
+    try:
+        flow.kickoff(inputs=test_input)
+        print("✅ Calling kickoff with inputs=test_input succeeded!")
+    except TypeError as e:
+        print(f"❌ Error: {e}")
+    
+    print("--- Test completed ---\n")
+
+
 if __name__ == "__main__":
-    # Call kickoff and use the return value as exit code
-    import sys
+    # Test the inputs parameter first
+    test_inputs_parameter()
+    # Then run the regular kickoff
     sys.exit(kickoff())
