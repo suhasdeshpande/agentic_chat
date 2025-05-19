@@ -17,6 +17,8 @@ class AgenticChatFlow(Flow[CopilotKitState]):
     @start()
     def chat(self):
         system_prompt = "You are a helpful assistant."
+
+        print("State: ", self.state)
         
         # Initialize CrewAI LLM with streaming enabled
         # Remove the provider parameter which is causing the error
