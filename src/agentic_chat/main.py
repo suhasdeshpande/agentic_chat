@@ -39,7 +39,6 @@ class AgenticChatFlow(CopilotKitFlow):
 
         # Get message history using the base class method
         messages = self.get_message_history(system_prompt=system_prompt)
-        logger.info(f"CHAT: Messages after get_message_history: {messages}")
 
         # Get available tools using the base class method
         tools = self.get_available_tools()

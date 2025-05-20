@@ -6,21 +6,25 @@ from crewai import LLM
 from crewai.utilities.events import crewai_event_bus
 from copilotkit.crewai import CopilotKitState
 import logging
+from crewai.utilities.events.base_events import BaseEvent
+from pydantic import Field
 
 logger = logging.getLogger(__name__)
 
 # Tool calls log for tracking
 tool_calls_log = []
 
-# Custom event type for CopilotKit tool calls
-class CopilotKitToolCallEvent:
+class CopilotKitToolCallEvent(BaseEvent):
     """Event emitted when a tool call is made through CopilotKit"""
-    type = "COPILOTKIT_FRONTEND_TOOL_CALL"
+    type: str = "copilotkit_frontend_tool_call"
 
-    def __init__(self, tool_name: str, args: Dict[str, Any]):
-        self.tool_name = tool_name
-        self.args = args
-        self.timestamp = datetime.datetime.now().isoformat()
+    tool_name: str
+    args: Dict[str, Any]
+    timestamp: str = Field(default_factory=lambda: datetime.datetime.now().isoformat())
+
+    def __init__(self, **data):
+        # If timestamp is not provided, it will use the default_factory
+        super().__init__(**data)
 
 # Tool proxy function generator
 def create_tool_proxy(tool_name):
@@ -108,7 +112,7 @@ class CopilotKitFlow(Flow[CopilotKitState]):
         print("======== GET_MESSAGE_HISTORY DEBUG ========")
         print(f"get_message_history called with system_prompt={system_prompt}")
         print(f"state exists: {hasattr(self, 'state')}")
-        print(f"input exists: {hasattr(self, 'input')}")
+        print(f"inputs exists: {hasattr(self, 'inputs')}")
         print(f"raw_input exists: {hasattr(self, '_raw_input')}")
 
         # Initialize with system prompt if provided
