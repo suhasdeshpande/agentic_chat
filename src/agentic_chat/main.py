@@ -36,13 +36,13 @@ class AgenticChatFlow(CopilotKitFlow):
     def chat(self):
         # Add super verbose logging at the start to capture exactly what we get
         logger.info("============ ENTERPRISE DEBUG START ============")
-        logger.debug(f"Flow ID: {getattr(self, 'id', 'unknown')}")
-        logger.debug(f"self dict keys: {list(vars(self).keys())}")
+        logger.info(f"Flow ID: {getattr(self, 'id', 'unknown')}")
+        logger.info(f"self dict keys: {list(vars(self).keys())}")
 
         # Log ALL attributes we can find
-        logger.debug(f"Input attribute exists: {hasattr(self, 'input')}")
-        logger.debug(f"State attribute exists: {hasattr(self, 'state')}")
-        logger.debug(f"Raw input attribute exists: {hasattr(self, '_raw_input')}")
+        logger.info(f"Input attribute exists: {hasattr(self, 'input')}")
+        logger.info(f"State attribute exists: {hasattr(self, 'state')}")
+        logger.info(f"Raw input attribute exists: {hasattr(self, '_raw_input')}")
         register_tool_call_listener()
 
         # Try to dump full raw objects
