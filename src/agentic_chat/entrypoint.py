@@ -66,7 +66,7 @@ def kickoff():
                 {
                     "id": "ck-bde5d991-261a-46e9-a825-895adcc92103",
                     "role": "user",
-                    "content": ""
+                    "content": "Hi, Tell a joke about programmer, and change the background to a nice blue gradient."
                 }
             ]
         }
