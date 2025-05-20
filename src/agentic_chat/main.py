@@ -4,10 +4,11 @@ from crewai.flow import start
 from crewai import LLM
 import sys
 import logging
+from agentic_chat.copilotkit_integration import register_tool_call_listener
 
 # Configure logging to print to console
 logging.basicConfig(
-    level=logging.DEBUG,  # Set to DEBUG to see all log messages
+    level=logging.INFO,  # Set to DEBUG to see all log messages
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(sys.stdout)  # Output to console
@@ -42,6 +43,7 @@ class AgenticChatFlow(CopilotKitFlow):
         logger.debug(f"Input attribute exists: {hasattr(self, 'input')}")
         logger.debug(f"State attribute exists: {hasattr(self, 'state')}")
         logger.debug(f"Raw input attribute exists: {hasattr(self, '_raw_input')}")
+        register_tool_call_listener()
 
         # Try to dump full raw objects
         if hasattr(self, "input"):
