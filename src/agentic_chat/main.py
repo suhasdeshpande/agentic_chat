@@ -8,7 +8,7 @@ from agentic_chat.copilotkit_integration import register_tool_call_listener
 
 # Configure logging to print to console
 logging.basicConfig(
-    level=logging.INFO,  # Set to DEBUG to see all log messages
+    level=logging.DEBUG,  # Set to DEBUG to see all log messages
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(sys.stdout)  # Output to console
