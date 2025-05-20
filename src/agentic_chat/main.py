@@ -5,6 +5,15 @@ from crewai import LLM
 import sys
 import logging
 
+# Configure logging to print to console
+logging.basicConfig(
+    level=logging.DEBUG,  # Set to DEBUG to see all log messages
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)  # Output to console
+    ]
+)
+
 logger = logging.getLogger(__name__)
 
 # Import from copilotkit_integration
