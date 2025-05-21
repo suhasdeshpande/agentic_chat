@@ -38,6 +38,7 @@ def create_tool_proxy(tool_name):
             "timestamp": event.timestamp
         })
         assert hasattr(crewai_event_bus, "emit")
+        logger.info(f"create_tool_proxy: Emitting tool call event for {tool_name} with parameters: {kwargs}")
         crewai_event_bus.emit(None, event=event)
         return f"\n\nTool {tool_name} called successfully with parameters: {kwargs}\n\n"
     return tool_proxy
@@ -85,23 +86,6 @@ class CopilotKitFlow(Flow[S], Generic[S]): # Make it generic
 
         return result # Return what the base Flow.kickoff returns
 
-
-    def pre_chat(self):
-        """
-        Prepares for chat. This method is mostly OBSOLETE if tools are sourced
-        from self.state.tools and proxied in format_tools_for_llm.
-        Its original intent to populate self.state.copilotkit.actions is no longer suitable
-        with a user-defined self.state.
-        """
-        print("======== PRE_CHAT (CopilotKitFlow) DEBUG ========")
-        # This method's previous logic manipulating self.state.copilotkit is removed.
-        # Tools should be sourced from self.state (e.g., self.state.tools)
-        # by get_available_tools and then proxied by format_tools_for_llm.
-        # If there was any other essential setup here, it needs to be re-evaluated.
-        print("Pre_chat: Ensuring tools are ready if needed. Main tool processing in format_tools_for_llm.")
-        print("======== END PRE_CHAT DEBUG ========")
-        # No specific action needed here anymore if tools are handled via self.state and format_tools_for_llm
-
     def get_message_history(self, system_prompt: Optional[str] = None, max_messages: int = 20) -> List[Dict[str, str]]:
         messages: List[Dict[str, str]] = []
 
@@ -109,14 +93,14 @@ class CopilotKitFlow(Flow[S], Generic[S]): # Make it generic
         if hasattr(self.state, "conversation_history") and isinstance(self.state.conversation_history, list) and self.state.conversation_history:
             # If we have conversation history, use it as the primary source of messages
             messages.extend(self.state.conversation_history)
-            print(f"get_message_history: Loaded {len(self.state.conversation_history)} messages from conversation history")
+            logger.info(f"get_message_history: Loaded {len(self.state.conversation_history)} messages from conversation history")
 
             # If there are new messages not in the history, add them temporarily (they'll be saved to history later)
             if hasattr(self.state, "messages") and isinstance(self.state.messages, list):
                 for msg in self.state.messages:
                     if msg not in messages:
                         messages.append(msg)
-                        print(f"get_message_history: Added new message (not yet in history): {msg.get('content', '')[:30]}...")
+                        logger.info(f"get_message_history: Added new message (not yet in history): {msg.get('content', '')[:30]}...")
 
         # If no conversation history, try current messages
         elif hasattr(self.state, "messages") and isinstance(self.state.messages, list):
@@ -126,7 +110,7 @@ class CopilotKitFlow(Flow[S], Generic[S]): # Make it generic
         # Fallback for raw input if state isn't populated as expected (less ideal)
         elif hasattr(self, "_raw_input") and isinstance(self._raw_input, dict) and "messages" in self._raw_input:
             messages.extend(self._raw_input["messages"])
-            print(f"get_message_history: Loaded {len(self._raw_input['messages'])} messages from _raw_input")
+            logger.info(f"get_message_history: Loaded {len(self._raw_input['messages'])} messages from _raw_input")
 
         # Add system prompt if needed
         if system_prompt:
@@ -136,7 +120,7 @@ class CopilotKitFlow(Flow[S], Generic[S]): # Make it generic
             if not has_system_message:
                 # Add system message at the beginning
                 messages.insert(0, {"role": "system", "content": system_prompt})
-                print(f"get_message_history: Added system prompt message")
+                logger.info(f"get_message_history: Added system prompt message")
 
         # Limit to max_messages, but keep the system message if present
         if len(messages) > max_messages:
@@ -145,11 +129,11 @@ class CopilotKitFlow(Flow[S], Generic[S]): # Make it generic
                 system_msg = messages[0]
                 recent_msgs = messages[-(max_messages-1):]
                 messages = [system_msg] + recent_msgs
-                print(f"get_message_history: Truncated to {len(messages)} messages (including system message)")
+                logger.info(f"get_message_history: Truncated to {len(messages)} messages (including system message)")
             else:
                 # Otherwise just take most recent messages
                 messages = messages[-max_messages:]
-                print(f"get_message_history: Truncated to {len(messages)} most recent messages")
+                logger.info(f"get_message_history: Truncated to {len(messages)} most recent messages")
 
         return messages
 
@@ -159,18 +143,18 @@ class CopilotKitFlow(Flow[S], Generic[S]): # Make it generic
         # Primary source: self.state.tools (from AgentInputState)
         if hasattr(self.state, "tools") and isinstance(self.state.tools, list):
             raw_tools = self.state.tools
-            print(f"get_available_tools: Loaded {len(raw_tools)} tools from self.state.tools")
+            logger.info(f"get_available_tools: Loaded {len(raw_tools)} tools from self.state.tools")
 
         # Fallback to _tools_from_input (populated in kickoff from raw 'inputs' dict)
         # This is useful if 'tools' was passed separately and not as part of the state model S.
         elif CopilotKitFlow._tools_from_input:
             raw_tools = CopilotKitFlow._tools_from_input
-            print(f"get_available_tools: Loaded {len(raw_tools)} tools from _tools_from_input")
+            logger.info(f"get_available_tools: Loaded {len(raw_tools)} tools from _tools_from_input")
 
         # Fallback for raw input (less ideal)
         elif hasattr(self, "_raw_input") and isinstance(self._raw_input, dict) and "tools" in self._raw_input:
             raw_tools = self._raw_input["tools"]
-            print(f"get_available_tools: Loaded {len(raw_tools)} tools from _raw_input")
+            logger.info(f"get_available_tools: Loaded {len(raw_tools)} tools from _raw_input")
 
         return raw_tools
 
@@ -178,7 +162,7 @@ class CopilotKitFlow(Flow[S], Generic[S]): # Make it generic
         formatted_tools = []
         available_functions = {}
 
-        print(f"format_tools_for_llm: Processing {len(tools_definitions)} tool definitions.")
+        logger.info(f"format_tools_for_llm: Processing {len(tools_definitions)} tool definitions.")
         for tool_def in tools_definitions:
             if "name" in tool_def and "parameters" in tool_def and "description" in tool_def:
                 # Standard OpenAI tool format
@@ -195,9 +179,9 @@ class CopilotKitFlow(Flow[S], Generic[S]): # Make it generic
                 # Create and store the proxy function
                 tool_name = tool_def["name"]
                 available_functions[tool_name] = create_tool_proxy(tool_name)
-                print(f"format_tools_for_llm: Created proxy for tool: {tool_name}")
+                logger.info(f"format_tools_for_llm: Created proxy for tool: {tool_name}")
             else:
-                print(f"format_tools_for_llm: Skipped invalid tool definition: {tool_def.get('name', 'N/A')}")
+                logger.info(f"format_tools_for_llm: Skipped invalid tool definition: {tool_def.get('name', 'N/A')}")
 
         return formatted_tools, available_functions
 
@@ -218,7 +202,7 @@ class CopilotKitFlow(Flow[S], Generic[S]): # Make it generic
         )
 
         if need_followup:
-            print("handle_tool_responses: Follow-up needed after tool call.")
+            logger.info("handle_tool_responses: Follow-up needed after tool call.")
             follow_up_messages = messages.copy()
             # Add the assistant's response that included tool calls (or was just tool call confirmations)
             follow_up_messages.append({"role": "assistant", "content": response_text})
@@ -230,10 +214,10 @@ class CopilotKitFlow(Flow[S], Generic[S]): # Make it generic
             # of the assistant's message. If the LLM needs explicit tool result messages,
             # this needs adjustment. For now, we assume the proxy's string output is sufficient.
 
-            prompt_for_final_answer = follow_up_prompt or "Please summarize the results or provide your complete response now that the tools have been used. Just acknowledge the tool calls and provide the final answer. DO NOT SAY YOU DO NOT HAVE THE ABILITY TO USE TOOLS."
+            prompt_for_final_answer = follow_up_prompt or "Tools have been called. Continue with your response."
             follow_up_messages.append({"role": "user", "content": prompt_for_final_answer})
 
-            print(f"handle_tool_responses: Calling LLM for follow-up with {len(follow_up_messages)} messages.")
+            logger.info(f"handle_tool_responses: Calling LLM for follow-up with {len(follow_up_messages)} messages.")
             # Call LLM without tools for a final natural language response
             final_response_text = llm.call(messages=follow_up_messages, tools=None, available_functions=None)
 
