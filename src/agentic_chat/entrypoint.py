@@ -7,7 +7,7 @@ This module intentionally separates imports to avoid circular dependencies.
 """
 
 import sys
-from agentic_chat.copilotkit_integration import register_tool_call_listener
+from copilotkit.crewai import register_tool_call_listener
 
 def kickoff():
     """
@@ -16,7 +16,7 @@ def kickoff():
     try:
         # Import AgenticChatFlow here to avoid circular imports
         from agentic_chat.main import AgenticChatFlow
-        
+
         kickoff_input = {
             "threadId": "ab3f70ea-5dff-4aa9-a3fa-eb2c1205b29a",
             "runId": "744172c5-edc2-430b-a73b-81c8ee42ad78",
@@ -48,15 +48,6 @@ def kickoff():
                         },
                         "required": ["background"]
                     }
-                },
-                {
-                    "name": "flow_finished",
-                    "description": "The flow has finished",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {},
-                        "required": []
-                    }
                 }
             ],
             "context": [],
@@ -70,14 +61,14 @@ def kickoff():
                 }
             ]
         }
-        
+
         # Register event listeners for tool calls
         register_tool_call_listener()
-        
+
         # Start the flow with the input
         agentic_chat_flow = AgenticChatFlow()
         agentic_chat_flow.kickoff(kickoff_input)
-        
+
         # Print summary of tool calls
         print(agentic_chat_flow.get_tools_summary())
 
@@ -90,4 +81,4 @@ def kickoff():
 
 
 if __name__ == "__main__":
-    sys.exit(kickoff()) 
+    sys.exit(kickoff())

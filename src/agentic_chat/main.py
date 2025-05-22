@@ -9,7 +9,7 @@ from crewai.flow import persist
 import json
 
 # Import from copilotkit_integration
-from agentic_chat.copilotkit_integration import (
+from copilotkit.crewai import (
     CopilotKitFlow,
     tool_calls_log,
 )
