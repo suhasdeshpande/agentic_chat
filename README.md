@@ -1,6 +1,4 @@
-# {{crew_name}} Crew
-
-Welcome to the {{crew_name}} Crew project, powered by [crewAI](https://crewai.com). This template is designed to help you set up a multi-agent AI system with ease, leveraging the powerful and flexible framework provided by crewAI. Our goal is to enable your agents to collaborate effectively on complex tasks, maximizing their collective intelligence and capabilities.
+# Agentic Chat Flow
 
 ## Installation
 
@@ -19,15 +17,6 @@ Next, navigate to your project directory and install the dependencies:
 ```bash
 crewai install
 ```
-
-### Customizing
-
-**Add your `OPENAI_API_KEY` into the `.env` file**
-
-- Modify `src/agentic_chat/config/agents.yaml` to define your agents
-- Modify `src/agentic_chat/config/tasks.yaml` to define your tasks
-- Modify `src/agentic_chat/crew.py` to add your own logic, tools and specific args
-- Modify `src/agentic_chat/main.py` to add custom inputs for your agents and tasks
 
 ## Running the Project
 
@@ -132,35 +121,6 @@ crewai run agentic_chat.examples:simple_example
 crewai run agentic_chat.examples:plot_example
 ```
 
-## Development
-
-### Project Structure
-
-- `main.py`: Core `AgenticChatFlow` class implementation
-- `copilotkit_integration.py`: Underlying integration with CopilotKit
-- `entrypoint.py`: Main kickoff function for CLI and direct execution
-- `examples.py`: Additional example functions and test cases
-
-### Module Organization
-
-The package is designed to avoid circular imports while maintaining compatibility with various entry points:
-
-1. `copilotkit_integration.py` contains the base integration functionality
-2. `main.py` imports from integration and defines the main flow class
-3. `entrypoint.py` imports from main to provide the kickoff entry point
-4. `examples.py` contains additional examples that import from main
-
-### Running Tests
-
-Test the integration using the provided examples:
-
-```bash
-# Run directly
-python -m agentic_chat.examples
-
-# Run with CrewAI CLI
-crewai run
-```
 
 ## License
 
