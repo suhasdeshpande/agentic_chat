@@ -83,10 +83,7 @@ class AgenticChatFlow(CopilotKitFlow[AgentInputState]): # Inherit from CopilotKi
             self.state.conversation_history.append(assistant_message)
 
 
-            return json.dumps({
-                "response": final_response,
-                "id": self.state.id
-            })
+            return final_response
 
         except Exception as e:
             return f"\n\nAn error occurred: {str(e)}\n\n"
