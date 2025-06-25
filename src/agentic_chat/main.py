@@ -1,98 +1,90 @@
-#!/usr/bin/env python
-from dotenv import load_dotenv
-from crewai.flow import start
-from crewai import LLM
+"""
+A simple agentic chat flow.
+"""
+
+from crewai.flow.flow import Flow, start
+from crewai.utilities.events import CrewAIEventsBus
+from litellm import completion
+from ag_ui_crewai import copilotkit_stream, CopilotKitState, CREW_ENTERPRISE_EVENT_LISTENER
 import sys
-from pydantic import BaseModel
-from typing import List, Dict, Any
-from crewai.flow import persist
-import json
 
-# Import from copilotkit_integration
-from copilotkit.crewai import (
-    CopilotKitFlow,
-    tool_calls_log,
-)
+# Setup event listeners with the CrewAI event bus
+event_bus = CrewAIEventsBus()
+CREW_ENTERPRISE_EVENT_LISTENER.setup_listeners(event_bus)
 
-# Load environment variables from .env file
-load_dotenv()
-
-class AgentInputState(BaseModel):
-    """Defines the expected input state for the AgenticChatFlow."""
-    messages: List[Dict[str, str]] = [] # Current message(s) from the user
-    tools: List[Dict[str, Any]] = [] # CopilotKit tool format: name, description, parameters
-    conversation_history: List[Dict[str, str]] = [] # Full conversation history (persisted between runs)
-
-
-@persist()
-class AgenticChatFlow(CopilotKitFlow[AgentInputState]): # Inherit from CopilotKitFlow and use AgentInputState
-    """
-    The main chat flow that utilizes the CopilotKit state and integration.
-    """
+class AgenticChatFlow(Flow[CopilotKitState]):
 
     @start()
-    def chat(self):
-        # pre_chat is called by CopilotKitFlow's kickoff/run logic if needed,
-        # or you can ensure it's called if your override kickoff.
-        # For now, assuming CopilotKitFlow handles its lifecycle methods.
-
-        # Initialize system prompt
+    async def chat(self):
         system_prompt = "You are a helpful assistant."
 
-        # Initialize CrewAI LLM with streaming enabled
-        # CrewAI's LLM class expects 'model' as the parameter name
-        llm = LLM(model="gpt-4o", stream=True)
+        # 1. Run the model and stream the response
+        #    Note: In order to stream the response, wrap the completion call in
+        #    copilotkit_stream and set stream=True.
+        response = await copilotkit_stream(
+            completion(
 
-        # Get message history using the base class method
-        # This should now correctly use self.state.messages from AgentInputState
-        messages = self.get_message_history(system_prompt=system_prompt)
+                # 1.1 Specify the model to use
+                model="openai/gpt-4o",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": system_prompt
+                    },
+                    *self.state.messages
+                ],
 
-        # Get available tools using the base class method
-        # This should now correctly use self.state.tools from AgentInputState
-        tools_definitions = self.get_available_tools()
+                # 1.2 Bind the available tools to the model
+                tools=[
+                    *self.state.copilotkit.actions,
+                ],
 
-        # Format tools for OpenAI API using the base class method
-        formatted_tools, available_functions = self.format_tools_for_llm(tools_definitions)
-
-        try:
-            # Track tool calls
-            initial_tool_calls_count = len(tool_calls_log)
-
-            response_content = llm.call(
-                messages=messages,
-                tools=formatted_tools if formatted_tools else None,
-                available_functions=available_functions if available_functions else None
+                # 1.3 Disable parallel tool calls to avoid race conditions,
+                #     enable this for faster performance if you want to manage
+                #     the complexity of running tool calls in parallel.
+                parallel_tool_calls=False,
+                stream=True
             )
+        )
 
-            # Handle tool responses using the base class method
-            final_response = self.handle_tool_responses(
-                llm=llm,
-                response_text=response_content, # Pass the text content of the response
-                messages=messages, # Original messages sent to LLM
-                tools_called_count_before_llm_call=initial_tool_calls_count
-            )
+        message = response.choices[0].message
 
-            # ---- Maintain conversation history ----
-            # 1. Add the current user message(s) to conversation history
-            for msg in self.state.messages:
-                if msg.get('role') == 'user' and msg not in self.state.conversation_history:
-                    self.state.conversation_history.append(msg)
-
-            # 2. Add the assistant's response to conversation history
-            assistant_message = {"role": "assistant", "content": final_response}
-            self.state.conversation_history.append(assistant_message)
-
-
-            return final_response
-
-        except Exception as e:
-            return f"\n\nAn error occurred: {str(e)}\n\n"
-
+        # 2. Append the message to the messages in state
+        self.state.messages.append(message)
+        return response.choices[0].message.content
 
 def kickoff():
     """Shim function that re-exports kickoff from entrypoint.py to avoid import errors"""
-    from agentic_chat.entrypoint import kickoff as entrypoint_kickoff
-    return entrypoint_kickoff()
+    kickoff_input = {
+        "tools": [
+            {
+                "name": "change_background",
+                "description": "Change the background color of the chat. Can be anything that the CSS background attribute accepts. Regular colors, linear of radial gradients etc.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "background": {
+                            "type": "string",
+                            "description": "The background. Prefer gradients."
+                        }
+                    },
+                    "required": ["background"]
+                }
+            }
+        ],
+        "state": {},
+        "messages": [
+            {
+                "role": "user",
+                "content": "Yes"
+            }
+        ]
+    }
+
+    # Start the flow with the input
+    agentic_chat_flow = AgenticChatFlow()
+    result = agentic_chat_flow.kickoff(kickoff_input)
+    print("RESULT", result)
 
 if __name__ == "__main__":
     # Run kickoff for compatibility with crewai run

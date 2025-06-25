@@ -5,8 +5,9 @@ description = "agentic_chat using crewAI"
 authors = [{ name = "Suhas Deshpande", email = "suhas@copilotkit.ai" }]
 requires-python = ">=3.10,<3.13"
 dependencies = [
-    "crewai[tools]>=0.118.0,<1.0.0",
-    "copilotkit==0.1.49",
+    "crewai[tools]",
+    "ag-ui-crewai==0.1.1",
+    "litellm",
 ]
 
 [project.scripts]
