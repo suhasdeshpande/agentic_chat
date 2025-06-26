@@ -3,14 +3,10 @@ A simple agentic chat flow.
 """
 
 from crewai.flow.flow import Flow, start
-from crewai.utilities.events import CrewAIEventsBus
 from litellm import completion
-from ag_ui_crewai import copilotkit_stream, CopilotKitState, CREW_ENTERPRISE_EVENT_LISTENER
-import sys
+from ag_ui_crewai import copilotkit_stream, CopilotKitState
 
-# Setup event listeners with the CrewAI event bus
-event_bus = CrewAIEventsBus()
-CREW_ENTERPRISE_EVENT_LISTENER.setup_listeners(event_bus)
+import sys
 
 class AgenticChatFlow(Flow[CopilotKitState]):
 

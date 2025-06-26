@@ -10,7 +10,7 @@ resolution-markers = [
 
 [[package]]
 name = "ag-ui-crewai"
-version = "0.1.1"
+version = "0.1.4a1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "ag-ui-protocol" },
@@ -18,9 +18,9 @@ dependencies = [
     { name = "fastapi" },
     { name = "uvicorn" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/44/5c/71b349537de0d7b6e594098dac1bf37b72ac5af7d67002f66da64a097d4d/ag_ui_crewai-0.1.1.tar.gz", hash = "sha256:22b5b52de5d6e78edf60fad5123a6a7d070065bfc087774b6e069a0478cbdb69", size = 7192, upload-time = "2025-06-25T17:31:08.458Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/7a/ca/84380cf21feec543d83f4bf2c0db3b59d96e4414608464eee0e6ba97ca6c/ag_ui_crewai-0.1.4a1.tar.gz", hash = "sha256:c083da4409169bc87c08530129ac991c23febfd8d2552bee76b6590f1a8b107f", size = 7771, upload-time = "2025-06-26T17:03:44.489Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/3e/fd/4351adba98516ea043e50d1b78bf6acc3efaa9662ca52188235d333d7621/ag_ui_crewai-0.1.1-py3-none-any.whl", hash = "sha256:75312f932ef814c954285b9cefe31cf94660fc06c91127e34dda2c01a6b578e5", size = 9921, upload-time = "2025-06-25T17:31:07.002Z" },
+    { url = "https://files.pythonhosted.org/packages/40/a1/08dffc81e0776a5e649ed532ae52238fe2b5e5d283dd1249a9414cf5d901/ag_ui_crewai-0.1.4a1-py3-none-any.whl", hash = "sha256:5b093a9d210d142ec5e7db846cb2d0e8f677403a324a9d56e38f10482a5e5ecd", size = 10521, upload-time = "2025-06-26T17:03:43.606Z" },
 ]
 
 [[package]]
@@ -47,7 +47,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "ag-ui-crewai", specifier = "==0.1.1" },
+    { name = "ag-ui-crewai", specifier = "==0.1.4a1" },
     { name = "crewai", extras = ["tools"] },
     { name = "litellm" },
 ]
